@@ -26,14 +26,17 @@
                 <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
                     <i class="fa-solid fa-file-invoice-dollar text-yellow-300"></i> Quản Lý Công Nợ Thông Minh
                 </h1>
-                <p class="text-blue-100 text-sm mt-1">Tự động tính toán, trừ tiền và quản lý kỳ hạn hiệu quả</p>
+                <p class="text-blue-100 text-sm mt-1">Trạng thái: <span id="sync-status" class="text-yellow-300 font-semibold">Đang kết nối máy chủ...</span></p>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-wrap justify-center">
                 <button onclick="resetData()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2">
-                    <i class="fa-solid fa-rotate-right"></i> Đặt lại mặc định
+                    <i class="fa-solid fa-rotate-right"></i> Mặc định
                 </button>
-                <button onclick="exportData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2">
-                    <i class="fa-solid fa-download"></i> Sao lưu dữ liệu
+                <button onclick="exportData()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Tải file
+                </button>
+                <button onclick="saveToCloud()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2 border-2 border-emerald-400">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Lưu & Đồng Bộ
                 </button>
             </div>
         </div>
@@ -71,7 +74,7 @@
             </div>
         </div>
 
-        <!-- BẢNG 1: ĐỐI TƯỢNG CÓ THỂ KÉO DÀI -->
+        <!-- BẢNG 1 -->
         <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
                 <h2 class="text-lg font-bold uppercase tracking-wider text-yellow-400">
@@ -95,14 +98,12 @@
                             <th class="py-3 px-2 w-16">XÓA</th>
                         </tr>
                     </thead>
-                    <tbody id="tableFlexibleBody">
-                        <!-- Dữ liệu render bằng JS -->
-                    </tbody>
+                    <tbody id="tableFlexibleBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- BẢNG 2: ĐỐI TƯỢNG KHÔNG THỂ KÉO DÀI -->
+        <!-- BẢNG 2 -->
         <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
                 <h2 class="text-lg font-bold uppercase tracking-wider text-yellow-400">
@@ -126,55 +127,96 @@
                             <th class="py-3 px-2 w-16">XÓA</th>
                         </tr>
                     </thead>
-                    <tbody id="tableFixedBody">
-                        <!-- Dữ liệu render bằng JS -->
-                    </tbody>
+                    <tbody id="tableFixedBody"></tbody>
                 </table>
             </div>
         </div>
     </main>
 
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-slate-500 text-sm mt-auto">
-        <p>Hệ thống Quản lý Công Nợ Trực Tuyến &copy; 2026 - Tự động đồng bộ LocalStorage</p>
+        <p>Hệ thống Quản lý Công Nợ Trực Tuyến &copy; 2026 - Tự động đồng bộ Đám mây</p>
     </footer>
 
+    <!-- Khai báo Firebase SDK phiên bản 8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <script>
-        // Dữ liệu mẫu khởi tạo ban đầu
+        // MÃ CẤU HÌNH CỦA BẠN ĐÃ ĐƯỢC LẮP VÀO ĐÂY
+        const firebaseConfig = {
+            apiKey: "AIzaSyCc028i9KCkaBT3BW7dtDjBxySA8z6OHUo",
+            authDomain: "quanlytieno.firebaseapp.com",
+            databaseURL: "https://quanlytieno-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "quanlytieno",
+            storageBucket: "quanlytieno.firebasestorage.app",
+            messagingSenderId: "595570734833",
+            appId: "1:595570734833:web:fdb16d6715db97d0b45b50"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+        const dataRef = database.ref('congno_data');
+
         const defaultData = {
             flexible: [
                 { id: 1, name: "Khoản vay kinh doanh A", total: 50000000, paid: 15000000, cycle: 10 },
-                { id: 2, name: "Hạn mức thẻ tín dụng", total: 20000000, paid: 5000000, cycle: 5 },
-                { id: 3, name: "Vay người thân mở xưởng", total: 100000000, paid: 20000000, cycle: 20 },
-                { id: 4, name: "", total: 0, paid: 0, cycle: 1 },
-                { id: 5, name: "", total: 0, paid: 0, cycle: 1 }
+                { id: 2, name: "Hạn mức thẻ tín dụng", total: 20000000, paid: 5000000, cycle: 5 }
             ],
             fixed: [
                 { id: 1, name: "Trả góp xe", total: 120000000, paid: 40000000, cycle: 12 },
-                { id: 2, name: "Miếng đất", total: 500000000, paid: 150000000, cycle: 24 },
-                { id: 3, name: "Cắm xe", total: 30000000, paid: 10000000, cycle: 3 },
-                { id: 4, name: "", total: 0, paid: 0, cycle: 1 },
-                { id: 5, name: "", total: 0, paid: 0, cycle: 1 }
+                { id: 2, name: "Miếng đất", total: 500000000, paid: 150000000, cycle: 24 }
             ]
         };
 
-        let appData = JSON.parse(localStorage.getItem('debt_manager_data')) || defaultData;
+        let appData = defaultData;
 
-        // Hàm định dạng tiền tệ VND
+        // LẮNG NGHE DỮ LIỆU REALTIME TỪ FIREBASE
+        dataRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                appData = data;
+                document.getElementById('sync-status').innerText = "Đã đồng bộ mới nhất 🟢";
+                document.getElementById('sync-status').className = "text-emerald-300 font-semibold";
+            } else {
+                appData = JSON.parse(JSON.stringify(defaultData));
+                document.getElementById('sync-status').innerText = "Đang dùng dữ liệu gốc ⚪";
+            }
+            renderTables();
+        }, (error) => {
+            document.getElementById('sync-status').innerText = "Lỗi kết nối máy chủ 🔴";
+            document.getElementById('sync-status').className = "text-red-300 font-semibold";
+            console.error("Firebase Error: ", error);
+            
+            const localData = localStorage.getItem('debt_manager_local');
+            if (localData) appData = JSON.parse(localData);
+            renderTables();
+        });
+
+        // HÀM LƯU LÊN CLOUD
+        window.saveToCloud = function() {
+            document.getElementById('sync-status').innerText = "Đang lưu... ⏳";
+            dataRef.set(appData)
+                .then(() => {
+                    document.getElementById('sync-status').innerText = "Đã lưu thành công 🟢";
+                    localStorage.setItem('debt_manager_local', JSON.stringify(appData));
+                    alert("Đã lưu và đồng bộ dữ liệu thành công!");
+                })
+                .catch((error) => {
+                    alert("Lỗi khi lưu dữ liệu. Vui lòng kiểm tra kết nối mạng!");
+                    console.error(error);
+                });
+        }
+
         function formatCurrency(num) {
             if (isNaN(num) || num === '') return '0 ₫';
             return Number(num).toLocaleString('vi-VN') + ' ₫';
         }
 
-        // Lưu dữ liệu vào localStorage
-        function saveData() {
-            localStorage.setItem('debt_manager_data', JSON.stringify(appData));
-            updateSummary();
-        }
-
-        // Render bảng dữ liệu
         function renderTables() {
-            renderTableBody('flexible', appData.flexible);
-            renderTableBody('fixed', appData.fixed);
+            renderTableBody('flexible', appData.flexible || []);
+            renderTableBody('fixed', appData.fixed || []);
             updateSummary();
         }
 
@@ -183,32 +225,18 @@
             tbody.innerHTML = '';
 
             list.forEach((item, index) => {
-                // Tự động trừ tiền: Nợ còn lại = Tổng nợ ban đầu - Nợ đã trả
                 const remaining = Math.max(0, Number(item.total) - Number(item.paid));
-                // Mỗi tháng phải trả = Nợ còn lại / Chu kỳ tháng (nếu chu kỳ > 0)
                 const monthlyPayment = item.cycle > 0 ? Math.round(remaining / Number(item.cycle)) : 0;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="text-center font-medium text-slate-500">${index + 1}</td>
-                    <td>
-                        <input type="text" value="${item.name || ''}" placeholder="Nhập tên đối tượng..." oninput="updateField('${type}', ${index}, 'name', this.value)">
-                    </td>
-                    <td>
-                        <input type="number" value="${item.total || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'total', this.value)" class="font-semibold text-blue-700">
-                    </td>
-                    <td>
-                        <input type="number" value="${item.paid || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'paid', this.value)" class="font-semibold text-emerald-600">
-                    </td>
-                    <td class="bg-yellow-50 font-bold text-amber-700 text-center">
-                        ${formatCurrency(remaining)}
-                    </td>
-                    <td>
-                        <input type="number" value="${item.cycle || 1}" min="1" oninput="updateField('${type}', ${index}, 'cycle', this.value)">
-                    </td>
-                    <td class="bg-yellow-50 font-bold text-indigo-700 text-center">
-                        ${formatCurrency(monthlyPayment)}
-                    </td>
+                    <td><input type="text" value="${item.name || ''}" placeholder="Nhập tên đối tượng..." oninput="updateField('${type}', ${index}, 'name', this.value)"></td>
+                    <td><input type="number" value="${item.total || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'total', this.value)" class="font-semibold text-blue-700"></td>
+                    <td><input type="number" value="${item.paid || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'paid', this.value)" class="font-semibold text-emerald-600"></td>
+                    <td class="bg-yellow-50 font-bold text-amber-700 text-center">${formatCurrency(remaining)}</td>
+                    <td><input type="number" value="${item.cycle || 1}" min="1" oninput="updateField('${type}', ${index}, 'cycle', this.value)"></td>
+                    <td class="bg-yellow-50 font-bold text-indigo-700 text-center">${formatCurrency(monthlyPayment)}</td>
                     <td class="text-center">
                         <button onclick="deleteRow('${type}', ${index})" class="text-slate-400 hover:text-red-600 transition p-1" title="Xóa dòng">
                             <i class="fa-solid fa-trash-can"></i>
@@ -219,19 +247,18 @@
             });
         }
 
-        // Cập nhật giá trị khi người dùng nhập liệu trực tiếp
-        function updateField(type, index, field, value) {
+        window.updateField = function(type, index, field, value) {
+            document.getElementById('sync-status').innerText = "Có thay đổi chưa lưu 🟡";
+            document.getElementById('sync-status').className = "text-yellow-400 font-semibold";
+            
             if (field === 'total' || field === 'paid' || field === 'cycle') {
                 appData[type][index][field] = value === '' ? 0 : parseFloat(value);
             } else {
                 appData[type][index][field] = value;
             }
-            saveData();
-            // Cập nhật lại các ô tính toán tự động trong dòng tương ứng mà không mất focus toàn bộ bảng nếu cần
             renderTablesWithoutLosingFocus(type, index);
         }
 
-        // Tối ưu render nhanh dòng hiện tại để mượt mà khi gõ phím
         function renderTablesWithoutLosingFocus(type, index) {
             const list = appData[type];
             const item = list[index];
@@ -247,28 +274,24 @@
             updateSummary();
         }
 
-        // Thêm dòng mới
-        function addRow(type) {
+        window.addRow = function(type) {
+            if (!appData[type]) appData[type] = [];
             appData[type].push({ id: Date.now(), name: "", total: 0, paid: 0, cycle: 1 });
-            saveData();
+            document.getElementById('sync-status').innerText = "Có thay đổi chưa lưu 🟡";
             renderTables();
         }
 
-        // Xóa dòng
-        function deleteRow(type, index) {
+        window.deleteRow = function(type, index) {
             appData[type].splice(index, 1);
-            saveData();
+            document.getElementById('sync-status').innerText = "Có thay đổi chưa lưu 🟡";
             renderTables();
         }
 
-        // Cập nhật các thẻ tổng quan phía trên
         function updateSummary() {
-            let totalPaid = 0;
-            let totalRemaining = 0;
-            let totalMonthly = 0;
+            let totalPaid = 0, totalRemaining = 0, totalMonthly = 0;
 
             ['flexible', 'fixed'].forEach(type => {
-                appData[type].forEach(item => {
+                (appData[type] || []).forEach(item => {
                     const paid = Number(item.paid) || 0;
                     const total = Number(item.total) || 0;
                     const cycle = Number(item.cycle) || 1;
@@ -286,17 +309,14 @@
             document.getElementById('totalMonthly').innerText = formatCurrency(totalMonthly);
         }
 
-        // Đặt lại dữ liệu mặc định
-        function resetData() {
-            if (confirm('Bạn có chắc chắn muốn đặt lại dữ liệu ban đầu không?')) {
+        window.resetData = function() {
+            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ trên mạng và đặt lại dữ liệu ban đầu không?')) {
                 appData = JSON.parse(JSON.stringify(defaultData));
-                saveData();
-                renderTables();
+                saveToCloud(); 
             }
         }
 
-        // Xuất dữ liệu lưu trữ
-        function exportData() {
+        window.exportData = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -305,11 +325,6 @@
             downloadAnchor.click();
             downloadAnchor.remove();
         }
-
-        // Khởi chạy ứng dụng khi tải xong trang
-        window.onload = function() {
-            renderTables();
-        };
     </script>
 </body>
 </html>
