@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phần Mềm Quản Lý Công Nợ</title>
+    <title>Phần Mềm Quản Lý Công Nợ & Dòng Tiền</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -12,16 +12,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        
         /* Tối ưu bảng cho mobile */
         .excel-table th { 
-            background-color: #fde047; 
             color: #1e293b; 
             text-align: center; 
             border: 1px solid #cbd5e1; 
-            white-space: nowrap; /* Không ngắt dòng tiêu đề cột */
+            white-space: nowrap; 
         }
+        .excel-table th.bg-yellow { background-color: #fde047; }
+        .excel-table th.bg-emerald { background-color: #a7f3d0; }
+        
         .excel-table td { border: 1px solid #cbd5e1; padding: 4px; }
-        @media (min-width: 768px) { .excel-table td { padding: 8px; } } /* Padding to hơn trên PC */
+        @media (min-width: 768px) { .excel-table td { padding: 8px; } }
         
         .excel-table input { 
             width: 100%; 
@@ -29,14 +32,14 @@
             border: none; 
             outline: none; 
             text-align: center; 
-            height: 40px; /* Chiều cao tối thiểu để dễ chạm trên điện thoại */
+            height: 40px; 
         }
         .excel-table input:focus { 
             background-color: #ffffff; 
             box-shadow: inset 0 0 0 2px #3b82f6; 
             border-radius: 4px; 
         }
-        /* Tùy chỉnh thanh cuộn ngang mượt mà cho bảng */
+        
         .table-container {
             -webkit-overflow-scrolling: touch;
         }
@@ -48,11 +51,13 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-center md:text-left w-full md:w-auto">
                 <h1 class="text-xl md:text-2xl lg:text-3xl font-bold flex justify-center md:justify-start items-center gap-2 md:gap-3">
-                    <i class="fa-solid fa-file-invoice-dollar text-yellow-300"></i> Quản Lý Công Nợ
+                    <i class="fa-solid fa-file-invoice-dollar text-yellow-300"></i> Quản Lý Dòng Tiền
                 </h1>
-                <p class="text-blue-100 text-xs md:text-sm mt-1.5">Trạng thái: <span id="sync-status" class="text-yellow-300 font-semibold">Đang kết nối...</span></p>
+                <p class="text-blue-100 text-xs md:text-sm mt-1.5 flex items-center justify-center md:justify-start gap-2">
+                    Trạng thái: <span id="sync-status" class="text-yellow-300 font-semibold">Đang kết nối...</span>
+                </p>
             </div>
-            <!-- Các nút bấm linh hoạt dàn hàng trên mobile -->
+            
             <div class="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap justify-center">
                 <button onclick="resetData()" class="flex-1 md:flex-none justify-center bg-red-500 hover:bg-red-600 text-white px-3 py-2.5 md:py-2 rounded-lg text-sm font-semibold shadow transition flex items-center gap-1.5">
                     <i class="fa-solid fa-rotate-right"></i> Mặc định
@@ -61,49 +66,90 @@
                     <i class="fa-solid fa-download"></i> Tải file
                 </button>
                 <button onclick="saveToCloud()" class="w-full sm:w-auto justify-center bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 md:py-2 rounded-lg text-sm font-bold shadow-lg transition flex items-center gap-2 border-2 border-emerald-400">
-                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i> Lưu & Đồng Bộ
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i> Lưu Thủ Công
                 </button>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-3 md:px-8 py-6 flex-grow w-full space-y-6 md:space-y-10 overflow-x-hidden">
-        <!-- Tổng quan số liệu -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-            <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                <div class="p-3 md:p-4 rounded-xl bg-blue-50 text-blue-600 text-xl md:text-2xl">
+        
+        <!-- Tổng quan số liệu (Thêm Thu nhập & Cân đối) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center text-center gap-2">
+                <div class="p-3 rounded-full bg-blue-50 text-blue-600 text-xl">
                     <i class="fa-solid fa-wallet"></i>
                 </div>
                 <div>
-                    <p class="text-xs md:text-sm font-medium text-slate-500">Tổng Nợ Đã Trả</p>
-                    <h3 id="totalPaid" class="text-lg md:text-2xl font-bold text-slate-800">0 ₫</h3>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Tổng Nợ Đã Trả</p>
+                    <h3 id="totalPaid" class="text-lg font-bold text-slate-800 mt-1">0 ₫</h3>
                 </div>
             </div>
-            <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                <div class="p-3 md:p-4 rounded-xl bg-amber-50 text-amber-600 text-xl md:text-2xl">
+            
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center text-center gap-2">
+                <div class="p-3 rounded-full bg-amber-50 text-amber-600 text-xl">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Tổng Nợ Còn Lại</p>
+                    <h3 id="totalRemaining" class="text-lg font-bold text-amber-600 mt-1">0 ₫</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center text-center gap-2">
+                <div class="p-3 rounded-full bg-rose-50 text-rose-600 text-xl">
+                    <i class="fa-solid fa-calendar-minus"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase">Phải Trả Hàng Tháng</p>
+                    <h3 id="totalMonthly" class="text-lg font-bold text-rose-600 mt-1">0 ₫</h3>
+                </div>
+            </div>
+
+            <div id="cashflowCard" class="bg-emerald-50 p-4 rounded-xl shadow-sm border-2 border-emerald-200 flex flex-col items-center text-center gap-2 transition-colors">
+                <div id="cashflowIcon" class="p-3 rounded-full bg-emerald-100 text-emerald-600 text-xl">
                     <i class="fa-solid fa-scale-balanced"></i>
                 </div>
                 <div>
-                    <p class="text-xs md:text-sm font-medium text-slate-500">Tổng Nợ Còn Lại</p>
-                    <h3 id="totalRemaining" class="text-lg md:text-2xl font-bold text-slate-800">0 ₫</h3>
-                </div>
-            </div>
-            <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                <div class="p-3 md:p-4 rounded-xl bg-emerald-50 text-emerald-600 text-xl md:text-2xl">
-                    <i class="fa-solid fa-calendar-check"></i>
-                </div>
-                <div>
-                    <p class="text-xs md:text-sm font-medium text-slate-500">Phải Trả Hàng Tháng</p>
-                    <h3 id="totalMonthly" class="text-lg md:text-2xl font-bold text-slate-800 flex-wrap">0 ₫</h3>
+                    <p class="text-xs font-bold text-slate-600 uppercase">Cân Đối (Thu - Trả Nợ)</p>
+                    <h3 id="cashflowTotal" class="text-xl font-black text-emerald-700 mt-1">0 ₫</h3>
                 </div>
             </div>
         </div>
 
-        <!-- BẢNG 1 -->
+        <!-- BẢNG THU NHẬP (MỚI) -->
+        <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+            <div class="bg-emerald-800 text-white px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <h2 class="text-base md:text-lg font-bold uppercase tracking-wider text-emerald-300 text-center sm:text-left">
+                    <i class="fa-solid fa-money-bill-trend-up mr-2"></i> Bảng Nguồn Thu Nhập
+                </h2>
+                <div class="text-emerald-200 font-medium text-sm">
+                    Tổng Thu: <span id="summaryIncome" class="font-bold text-white text-base ml-1">0 ₫</span>
+                </div>
+                <button onclick="addRow('income')" class="bg-emerald-400 hover:bg-emerald-500 text-emerald-900 text-sm font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-1.5 w-full sm:w-auto justify-center">
+                    <i class="fa-solid fa-plus"></i> Thêm Nguồn Thu
+                </button>
+            </div>
+            <div class="table-container overflow-x-auto p-2 md:p-4 w-full">
+                <table class="excel-table w-full border-collapse text-xs md:text-sm">
+                    <thead>
+                        <tr>
+                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16 bg-emerald">STT</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-emerald text-left">NGUỒN THU NHẬP</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-emerald">SỐ TIỀN THU ĐƯỢC MỖI THÁNG</th>
+                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16 bg-emerald">XÓA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableIncomeBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BẢNG 1: NỢ CÓ THỂ KÉO DÀI -->
         <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <h2 class="text-base md:text-lg font-bold uppercase tracking-wider text-yellow-400 text-center sm:text-left">
-                    <i class="fa-solid fa-layer-group mr-2"></i> Có Thể Kéo Dài
+                    <i class="fa-solid fa-layer-group mr-2"></i> Nợ Có Thể Kéo Dài
                 </h2>
                 <button onclick="addRow('flexible')" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-1.5 w-full sm:w-auto justify-center">
                     <i class="fa-solid fa-plus"></i> Thêm dòng
@@ -113,14 +159,14 @@
                 <table class="excel-table w-full border-collapse text-xs md:text-sm">
                     <thead>
                         <tr>
-                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16">STT</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">ĐỐI TƯỢNG</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">TỔNG NỢ BAN ĐẦU</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">NỢ ĐÃ TRẢ</th>
+                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16 bg-yellow">STT</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">ĐỐI TƯỢNG</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">TỔNG NỢ BAN ĐẦU</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">NỢ ĐÃ TRẢ</th>
                             <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow-100">NỢ CÒN LẠI</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">CHU KỲ (THÁNG)</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">CHU KỲ (THÁNG)</th>
                             <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow-100">MỖI THÁNG PHẢI TRẢ</th>
-                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16">XÓA</th>
+                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16 bg-yellow">XÓA</th>
                         </tr>
                     </thead>
                     <tbody id="tableFlexibleBody"></tbody>
@@ -128,11 +174,11 @@
             </div>
         </div>
 
-        <!-- BẢNG 2 -->
+        <!-- BẢNG 2: NỢ KHÔNG THỂ KÉO DÀI -->
         <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <h2 class="text-base md:text-lg font-bold uppercase tracking-wider text-yellow-400 text-center sm:text-left">
-                    <i class="fa-solid fa-shield-halved mr-2"></i> Không Thể Kéo Dài
+                    <i class="fa-solid fa-shield-halved mr-2"></i> Nợ Không Thể Kéo Dài
                 </h2>
                 <button onclick="addRow('fixed')" class="bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-1.5 w-full sm:w-auto justify-center">
                     <i class="fa-solid fa-plus"></i> Thêm dòng
@@ -142,14 +188,14 @@
                 <table class="excel-table w-full border-collapse text-xs md:text-sm">
                     <thead>
                         <tr>
-                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16">STT</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">ĐỐI TƯỢNG</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">TỔNG NỢ BAN ĐẦU</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">NỢ ĐÃ TRẢ</th>
+                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16 bg-yellow">STT</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">ĐỐI TƯỢNG</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">TỔNG NỢ BAN ĐẦU</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">NỢ ĐÃ TRẢ</th>
                             <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow-100">NỢ CÒN LẠI</th>
-                            <th class="py-2 md:py-3 px-2 md:px-4">CHU KỲ (THÁNG)</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow">CHU KỲ (THÁNG)</th>
                             <th class="py-2 md:py-3 px-2 md:px-4 bg-yellow-100">MỖI THÁNG PHẢI TRẢ</th>
-                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16">XÓA</th>
+                            <th class="py-2 md:py-3 px-1 md:px-2 w-10 md:w-16 bg-yellow">XÓA</th>
                         </tr>
                     </thead>
                     <tbody id="tableFixedBody"></tbody>
@@ -159,15 +205,14 @@
     </main>
 
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-slate-500 text-xs md:text-sm mt-auto">
-        <p>Hệ thống Quản lý Công Nợ Trực Tuyến &copy; 2026 - Tự động đồng bộ Đám mây</p>
+        <p>Hệ thống Quản lý Công Nợ & Dòng Tiền &copy; 2026 - Có tính năng Auto-save</p>
     </footer>
 
-    <!-- Khai báo Firebase SDK phiên bản 8 -->
+    <!-- Firebase SDK 8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-        // MÃ CẤU HÌNH FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCc028i9KCkaBT3BW7dtDjBxySA8z6OHUo",
             authDomain: "quanlytieno.firebaseapp.com",
@@ -178,60 +223,75 @@
             appId: "1:595570734833:web:fdb16d6715db97d0b45b50"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const dataRef = database.ref('congno_data');
 
         const defaultData = {
+            income: [
+                { id: 1, name: "Lương công ty", amount: 20000000 },
+                { id: 2, name: "Bán hàng Online", amount: 5000000 }
+            ],
             flexible: [
                 { id: 1, name: "Khoản vay kinh doanh A", total: 50000000, paid: 15000000, cycle: 10 },
-                { id: 2, name: "Hạn mức thẻ tín dụng", total: 20000000, paid: 5000000, cycle: 5 }
             ],
             fixed: [
                 { id: 1, name: "Trả góp xe", total: 120000000, paid: 40000000, cycle: 12 },
-                { id: 2, name: "Miếng đất", total: 500000000, paid: 150000000, cycle: 24 }
             ]
         };
 
         let appData = defaultData;
+        let hasUnsavedChanges = false; // Cờ theo dõi thay đổi
 
         // LẮNG NGHE DỮ LIỆU REALTIME
         dataRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                appData = data;
-                document.getElementById('sync-status').innerText = "Đã đồng bộ mới nhất 🟢";
-                document.getElementById('sync-status').className = "text-emerald-300 font-semibold";
+                // Rất quan trọng: Chỉ render lại bảng nếu data từ server KHÁC với data đang gõ
+                // Để tránh việc mất focus khi auto-save
+                if (JSON.stringify(data) !== JSON.stringify(appData)) {
+                    appData = data;
+                    renderTables();
+                }
+                
+                if (!hasUnsavedChanges) {
+                    document.getElementById('sync-status').innerHTML = "Đã đồng bộ mới nhất <i class='fa-solid fa-cloud-check'></i>";
+                    document.getElementById('sync-status').className = "text-emerald-300 font-semibold";
+                }
             } else {
                 appData = JSON.parse(JSON.stringify(defaultData));
-                document.getElementById('sync-status').innerText = "Đang dùng dữ liệu gốc ⚪";
-                document.getElementById('sync-status').className = "text-blue-200 font-semibold";
+                renderTables();
             }
-            renderTables();
-        }, (error) => {
-            document.getElementById('sync-status').innerText = "Lỗi kết nối máy chủ 🔴";
-            document.getElementById('sync-status').className = "text-red-300 font-semibold";
-            console.error("Firebase Error: ", error);
-            
-            const localData = localStorage.getItem('debt_manager_local');
-            if (localData) appData = JSON.parse(localData);
-            renderTables();
         });
 
-        // HÀM LƯU LÊN CLOUD
-        window.saveToCloud = function() {
-            document.getElementById('sync-status').innerText = "Đang lưu... ⏳";
+        // HÀM TỰ ĐỘNG LƯU MỖI 3 GIÂY
+        setInterval(() => {
+            if (hasUnsavedChanges) {
+                saveToCloud(true); // isAuto = true
+            }
+        }, 3000);
+
+        // HÀM LƯU LÊN CLOUD (Sửa để hỗ trợ Auto-save im lặng)
+        window.saveToCloud = function(isAuto = false) {
+            if (isAuto && !hasUnsavedChanges) return;
+
+            const statusEl = document.getElementById('sync-status');
+            statusEl.innerHTML = isAuto ? "Đang tự động lưu... <i class='fa-solid fa-spinner fa-spin'></i>" : "Đang lưu... <i class='fa-solid fa-spinner fa-spin'></i>";
+            statusEl.className = "text-yellow-300 font-semibold";
+
             dataRef.set(appData)
                 .then(() => {
-                    document.getElementById('sync-status').innerText = "Đã lưu thành công 🟢";
+                    hasUnsavedChanges = false;
+                    statusEl.innerHTML = "Đã lưu thành công <i class='fa-solid fa-cloud-check'></i>";
+                    statusEl.className = "text-emerald-300 font-semibold";
                     localStorage.setItem('debt_manager_local', JSON.stringify(appData));
-                    alert("Đã lưu và đồng bộ dữ liệu thành công!");
+                    
+                    if (!isAuto) alert("Đã lưu và đồng bộ dữ liệu thành công!");
                 })
                 .catch((error) => {
-                    alert("Lỗi khi lưu dữ liệu. Vui lòng kiểm tra kết nối mạng!");
-                    console.error(error);
+                    statusEl.innerText = "Lỗi lưu dữ liệu 🔴";
+                    statusEl.className = "text-red-300 font-semibold";
+                    if (!isAuto) alert("Lỗi khi lưu dữ liệu. Vui lòng kiểm tra kết nối mạng!");
                 });
         }
 
@@ -241,12 +301,37 @@
         }
 
         function renderTables() {
+            renderIncomeTable(appData.income || []);
             renderTableBody('flexible', appData.flexible || []);
             renderTableBody('fixed', appData.fixed || []);
             updateSummary();
         }
 
-        // Tối ưu hàm render thêm các thuộc tính min-width để tránh vỡ form trên điện thoại
+        // Render Bảng Thu Nhập
+        function renderIncomeTable(list) {
+            const tbody = document.getElementById('tableIncomeBody');
+            tbody.innerHTML = '';
+
+            list.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-center font-medium text-slate-500 whitespace-nowrap min-w-[40px]">${index + 1}</td>
+                    <td>
+                        <input type="text" value="${item.name || ''}" placeholder="Nhập tên nguồn thu..." oninput="updateField('income', ${index}, 'name', this.value)" class="text-left px-2 min-w-[140px] md:min-w-[180px]">
+                    </td>
+                    <td>
+                        <input type="number" value="${item.amount || 0}" min="0" step="1000" oninput="updateField('income', ${index}, 'amount', this.value)" class="font-semibold text-emerald-700 min-w-[110px] md:min-w-[140px]">
+                    </td>
+                    <td class="text-center min-w-[50px]">
+                        <button onclick="deleteRow('income', ${index})" class="text-slate-400 hover:text-red-600 transition p-2 md:p-1" title="Xóa dòng">
+                            <i class="fa-solid fa-trash-can text-lg md:text-base"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function renderTableBody(type, list) {
             const tbody = document.getElementById(type === 'flexible' ? 'tableFlexibleBody' : 'tableFixedBody');
             tbody.innerHTML = '';
@@ -258,28 +343,14 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="text-center font-medium text-slate-500 whitespace-nowrap min-w-[40px]">${index + 1}</td>
-                    <td>
-                        <input type="text" value="${item.name || ''}" placeholder="Nhập tên..." oninput="updateField('${type}', ${index}, 'name', this.value)" class="text-left px-2 min-w-[140px] md:min-w-[180px]">
-                    </td>
-                    <td>
-                        <input type="number" value="${item.total || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'total', this.value)" class="font-semibold text-blue-700 min-w-[110px] md:min-w-[140px]">
-                    </td>
-                    <td>
-                        <input type="number" value="${item.paid || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'paid', this.value)" class="font-semibold text-emerald-600 min-w-[110px] md:min-w-[140px]">
-                    </td>
-                    <td class="bg-yellow-50 font-bold text-amber-700 text-center whitespace-nowrap min-w-[110px] md:min-w-[140px]">
-                        ${formatCurrency(remaining)}
-                    </td>
-                    <td>
-                        <input type="number" value="${item.cycle || 1}" min="1" oninput="updateField('${type}', ${index}, 'cycle', this.value)" class="min-w-[70px] md:min-w-[100px]">
-                    </td>
-                    <td class="bg-yellow-50 font-bold text-indigo-700 text-center whitespace-nowrap min-w-[110px] md:min-w-[140px]">
-                        ${formatCurrency(monthlyPayment)}
-                    </td>
+                    <td><input type="text" value="${item.name || ''}" placeholder="Nhập tên..." oninput="updateField('${type}', ${index}, 'name', this.value)" class="text-left px-2 min-w-[140px] md:min-w-[180px]"></td>
+                    <td><input type="number" value="${item.total || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'total', this.value)" class="font-semibold text-blue-700 min-w-[110px] md:min-w-[140px]"></td>
+                    <td><input type="number" value="${item.paid || 0}" min="0" step="1000" oninput="updateField('${type}', ${index}, 'paid', this.value)" class="font-semibold text-blue-500 min-w-[110px] md:min-w-[140px]"></td>
+                    <td class="bg-yellow-50 font-bold text-amber-700 text-center whitespace-nowrap min-w-[110px] md:min-w-[140px]">${formatCurrency(remaining)}</td>
+                    <td><input type="number" value="${item.cycle || 1}" min="1" oninput="updateField('${type}', ${index}, 'cycle', this.value)" class="min-w-[70px] md:min-w-[100px]"></td>
+                    <td class="bg-yellow-50 font-bold text-rose-600 text-center whitespace-nowrap min-w-[110px] md:min-w-[140px]">${formatCurrency(monthlyPayment)}</td>
                     <td class="text-center min-w-[50px]">
-                        <button onclick="deleteRow('${type}', ${index})" class="text-slate-400 hover:text-red-600 transition p-2 md:p-1" title="Xóa dòng">
-                            <i class="fa-solid fa-trash-can text-lg md:text-base"></i>
-                        </button>
+                        <button onclick="deleteRow('${type}', ${index})" class="text-slate-400 hover:text-red-600 transition p-2 md:p-1" title="Xóa dòng"><i class="fa-solid fa-trash-can text-lg md:text-base"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -287,15 +358,21 @@
         }
 
         window.updateField = function(type, index, field, value) {
-            document.getElementById('sync-status').innerText = "Có thay đổi chưa lưu 🟡";
+            hasUnsavedChanges = true; // Kích hoạt cờ cho auto-save
+            document.getElementById('sync-status').innerHTML = "Có thay đổi chưa lưu <i class='fa-solid fa-pen'></i>";
             document.getElementById('sync-status').className = "text-yellow-400 font-semibold";
             
-            if (field === 'total' || field === 'paid' || field === 'cycle') {
+            if (field === 'total' || field === 'paid' || field === 'cycle' || field === 'amount') {
                 appData[type][index][field] = value === '' ? 0 : parseFloat(value);
             } else {
                 appData[type][index][field] = value;
             }
-            renderTablesWithoutLosingFocus(type, index);
+
+            if (type === 'income') {
+                updateSummary();
+            } else {
+                renderTablesWithoutLosingFocus(type, index);
+            }
         }
 
         function renderTablesWithoutLosingFocus(type, index) {
@@ -315,20 +392,30 @@
 
         window.addRow = function(type) {
             if (!appData[type]) appData[type] = [];
-            appData[type].push({ id: Date.now(), name: "", total: 0, paid: 0, cycle: 1 });
-            document.getElementById('sync-status').innerText = "Có thay đổi chưa lưu 🟡";
+            if (type === 'income') {
+                appData[type].push({ id: Date.now(), name: "", amount: 0 });
+            } else {
+                appData[type].push({ id: Date.now(), name: "", total: 0, paid: 0, cycle: 1 });
+            }
+            hasUnsavedChanges = true;
             renderTables();
         }
 
         window.deleteRow = function(type, index) {
             appData[type].splice(index, 1);
-            document.getElementById('sync-status').innerText = "Có thay đổi chưa lưu 🟡";
+            hasUnsavedChanges = true;
             renderTables();
         }
 
         function updateSummary() {
-            let totalPaid = 0, totalRemaining = 0, totalMonthly = 0;
+            let totalPaid = 0, totalRemaining = 0, totalMonthly = 0, totalIncome = 0;
 
+            // Tính Thu Nhập
+            (appData.income || []).forEach(item => {
+                totalIncome += (Number(item.amount) || 0);
+            });
+
+            // Tính Nợ
             ['flexible', 'fixed'].forEach(type => {
                 (appData[type] || []).forEach(item => {
                     const paid = Number(item.paid) || 0;
@@ -343,15 +430,39 @@
                 });
             });
 
+            // Tiền cân đối (Thu nhập trừ đi Nợ hàng tháng)
+            const cashflow = totalIncome - totalMonthly;
+
+            document.getElementById('summaryIncome').innerText = formatCurrency(totalIncome);
             document.getElementById('totalPaid').innerText = formatCurrency(totalPaid);
             document.getElementById('totalRemaining').innerText = formatCurrency(totalRemaining);
             document.getElementById('totalMonthly').innerText = formatCurrency(totalMonthly);
+            
+            // Xử lý Giao diện thẻ Cân đối dòng tiền
+            const cashflowCard = document.getElementById('cashflowCard');
+            const cashflowIcon = document.getElementById('cashflowIcon');
+            const cashflowTotal = document.getElementById('cashflowTotal');
+            
+            cashflowTotal.innerText = formatCurrency(cashflow);
+
+            if (cashflow >= 0) {
+                cashflowCard.className = "bg-emerald-50 p-4 rounded-xl shadow-sm border-2 border-emerald-300 flex flex-col items-center text-center gap-2 transition-colors";
+                cashflowIcon.className = "p-3 rounded-full bg-emerald-200 text-emerald-700 text-xl";
+                cashflowTotal.className = "text-xl font-black text-emerald-700 mt-1";
+            } else {
+                // Âm tiền - Báo đỏ
+                cashflowCard.className = "bg-rose-50 p-4 rounded-xl shadow-sm border-2 border-rose-300 flex flex-col items-center text-center gap-2 transition-colors";
+                cashflowIcon.className = "p-3 rounded-full bg-rose-200 text-rose-700 text-xl";
+                cashflowTotal.className = "text-xl font-black text-rose-700 mt-1";
+            }
         }
 
         window.resetData = function() {
             if (confirm('Bạn có chắc chắn muốn xóa toàn bộ trên mạng và đặt lại dữ liệu ban đầu không?')) {
                 appData = JSON.parse(JSON.stringify(defaultData));
-                saveToCloud(); 
+                hasUnsavedChanges = true;
+                saveToCloud(true);
+                renderTables();
             }
         }
 
@@ -359,7 +470,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "quan_ly_cong_no_backup.json");
+            downloadAnchor.setAttribute("download", "quan_ly_dong_tien_backup.json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
